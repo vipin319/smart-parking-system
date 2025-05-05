@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Detection</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        img {
+            width: 70%; /* Reduced size to 50% of the parent element */
+            max-width: 700px; /* Optional: set a maximum width */
+            border: 2px solid #000;
+            border-radius: 5px; /* Optional: add rounded corners */
+        }
+        #empty-slots {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Parking Space Detection</h1>
+    <img src="{{ url_for('video_feed') }}" alt="Video Feed">
+    <div id="empty-slots">
+        <h2>Empty Slots</h2>
+        <p id="slots-list">Loading...</p>
+    </div>
+
+    <script>
+        async function fetchEmptySlots() {
+            try {
+                const response = await fetch('/empty_slots');
+                const data = await response.json();
+                const slots = data.empty_slots;
+
+                // Update the slots list
+                const slotsList = document.getElementById('slots-list');
+                if (slots.length > 0) {
+                    slotsList.innerHTML = slots.join(', ');
+                } else {
+                    slotsList.innerHTML = 'No empty slots available.';
+                }
+            } catch (error) {
+                console.error('Error fetching empty slots:', error);
+            }
+        }
+
+        // Fetch empty slots every 2 seconds
+        setInterval(fetchEmptySlots, 1000);
+        // Initial fetch
+        fetchEmptySlots();
+    </script>
+</body>
+</html>

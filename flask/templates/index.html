@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Management</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4CAF50;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Centered container */
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            max-width: 1200px;
+        }
+
+        /* Form Styles */
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        form label {
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            font-size: 1rem;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: #4CAF50;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2rem;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Image Preview Styles */
+        .image-preview {
+            margin-top: 10px;
+            max-width: 300px;
+            max-height: 200px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* Message and error styling */
+        .message, .error {
+            font-size: 1.2rem;
+            margin-top: 20px;
+        }
+
+        .message {
+            color: #4CAF50;
+        }
+
+        .error {
+            color: #FF5722;
+        }
+
+        /* Records Table Styling */
+        #records {
+            margin-top: 40px;
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+        }
+
+        th {
+            background: linear-gradient(45deg, #4CAF50, #81C784);
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Button to show records */
+        #show-records {
+            background-color: #2196F3;
+            color: white;
+            font-size: 1.2rem;
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #show-records:hover {
+            background-color: #1976D2;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            input[type="file"], button {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Smart Parking Management</h1>
+
+        <!-- Form for vehicle entry -->
+        <form id="entry-form" action="/upload-entry" method="post" enctype="multipart/form-data">
+            <label for="entryImage">Upload Entry Image:</label>
+            <input type="file" name="image" id="entryImage" required>
+            <button type="submit">Submit Entry</button>
+            <img id="entry-preview" class="image-preview" style="display: none;" />
+        </form>
+
+        <!-- Form for vehicle exit -->
+        <form id="exit-form" action="/upload-exit" method="post" enctype="multipart/form-data">
+            <label for="exitImage">Upload Exit Image:</label>
+            <input type="file" name="image" id="exitImage" required>
+            <button type="submit">Submit Exit</button>
+            <img id="exit-preview" class="image-preview" style="display: none;" />
+        </form>
+
+        <!-- Button to fetch records -->
+        <button id="show-records">Show Records</button>
+
+        <!-- Messages and errors -->
+        <div class="message" id="message"></div>
+        <div class="error" id="error"></div>
+
+        <!-- Table for displaying records -->
+        <div id="records">
+            <h2>Parking Lot Records</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Number Plate</th>
+                        <th>Entry Time</th>
+                        <th>Exit Time</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="records-body">
+                    <!-- Rows will be dynamically populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const entryForm = document.getElementById('entry-form');
+        const exitForm = document.getElementById('exit-form');
+        const showRecordsBtn = document.getElementById('show-records');
+        const messageDiv = document.getElementById('message');
+        const errorDiv = document.getElementById('error');
+        const recordsDiv = document.getElementById('records');
+        const recordsBody = document.getElementById('records-body');
+
+        const entryImageInput = document.getElementById('entryImage');
+        const exitImageInput = document.getElementById('exitImage');
+        const entryPreview = document.getElementById('entry-preview');
+        const exitPreview = document.getElementById('exit-preview');
+
+        // Image preview for entry
+        entryImageInput.addEventListener('change', function() {
+            const file = entryImageInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    entryPreview.style.display = 'block';
+                    entryPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Image preview for exit
+        exitImageInput.addEventListener('change', function() {
+            const file = exitImageInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    exitPreview.style.display = 'block';
+                    exitPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+
+        // Handle entry form submission
+        entryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(entryForm);
+
+            messageDiv.textContent = '';
+            errorDiv.textContent = '';
+            recordsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/upload-entry', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                } else if (data.message) {
+                    messageDiv.textContent = data.message;
+                }
+            } catch (err) {
+                errorDiv.textContent = 'An error occurred during entry submission.';
+            }
+        });
+
+        // Handle exit form submission
+        exitForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(exitForm);
+
+            messageDiv.textContent = '';
+            errorDiv.textContent = '';
+            recordsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/upload-exit', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                } else if (data.message) {
+                    messageDiv.textContent = data.message;
+                }
+            } catch (err) {
+                errorDiv.textContent = 'An error occurred during exit submission.';
+            }
+        });
+
+        // Handle "Show Records" button click
+        showRecordsBtn.addEventListener('click', async () => {
+            messageDiv.textContent = '';
+            errorDiv.textContent = '';
+
+            try {
+                const response = await fetch('/get-records');
+                const data = await response.json();
+
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                } else {
+                    recordsBody.innerHTML = ''; // Clear previous records
+                    data.records.forEach((record) => {
+                        const row = document.createElement('tr');
+                        const duration = record.exit_time
+                            ? (new Date(record.exit_time) - new Date(record.entry_time)) / 60000 + ' min'
+                            : 'Still in Lot';
+                        row.innerHTML = `
+                            <td>${record.id}</td>
+                            <td>${record.noplate}</td>
+                            <td>${record.entry_time}</td>
+                            <td>${record.exit_time || 'N/A'}</td>
+                            <td>${duration}</td>
+                        `;
+                        recordsBody.appendChild(row);
+                    });
+                    recordsDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'An error occurred while fetching records.';
+            }
+        });
+    </script>
+</body>
+</html>
